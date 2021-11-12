@@ -6,15 +6,17 @@ variables:
     std:
       multiplier: 0.1
   random:
-    type: 'numeric'
     n: 5
+    n_numeric: 4
+    max_categories: 5
     std:
       multiplier: 0.1
     mean:
       multiplier: 2
   related:
-    type: 'numeric'
     n: 5
+    n_numeric: 4
+    max_categories: 5
     std:
       multiplier: 0.1
     mean:
@@ -22,8 +24,9 @@ variables:
     additive_column: 'outcome'
     max_order: 3
   correlated:
-    type: 'numeric'
     n: 0
+    n_numeric: 4
+    max_categories: 5
     std:
       multiplier: 0.1
     mean:

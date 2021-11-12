@@ -9,7 +9,6 @@ import shap
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso
 
-
 def load_data(data_subdir):
     dir = os.path.join('articles/feature-selection/data', data_subdir)
     files = [
@@ -36,10 +35,11 @@ def get_top_n_features(values, names, n):
     top_features = list(names[indices])
     return top_features
 
-def get_model_artifact_selections(data, n):
+def get_model_artifact_selections(data):
     variable_importance_selections = []
     shap_selections = []
     for d in data:
+        n = len([x for x in d.columns if re.match('related', x)])
 
         X = d.drop(['outcome'], axis=1)
         clf = RandomForestRegressor(random_state=0, max_depth=2)
@@ -58,9 +58,10 @@ def get_model_artifact_selections(data, n):
 
     return variable_importance_selections, shap_selections
 
-def get_feature_correlation_selections(data, n):
+def get_feature_correlation_selections(data):
     selections = []
     for d in data:
+        n = len([x for x in d.columns if re.match('related', x)])
         cor = d.corr(method='spearman') \
             .reset_index() \
             .sort_values(['outcome'], ascending=False) \
@@ -72,16 +73,15 @@ def get_feature_correlation_selections(data, n):
 
 
 datasets = ['simple', 'correlated', 'noise']
-n_variables = 5
 
 metrics = []
 for dataset_name in datasets:
     data = load_data(dataset_name)
 
-    correlation = get_feature_correlation_selections(data, n_variables)
+    correlation = get_feature_correlation_selections(data)
     correlation_p_correct = calculate_proportion_by_type(correlation).get('related')
 
-    feature_importance, shap_ = get_model_artifact_selections(data, n_variables)
+    feature_importance, shap_ = get_model_artifact_selections(data)
     feature_importance_p_correct = calculate_proportion_by_type(feature_importance).get('related')
     shap_p_correct = calculate_proportion_by_type(shap_).get('related')
 

@@ -21,7 +21,7 @@ class Simlator:
         self._create_dataframe_with_outcome()
         numeric_groups = [x for x in self.variable_groups if x != 'outcome']
         for group in numeric_groups:
-            self._simulate_numeric_group_variables(group)
+            self._simulate_group_variables(group)
         return self.data, self.distributions
 
     def _load_parameters(self, path):
@@ -32,11 +32,6 @@ class Simlator:
         self.outcome_mean = params.get('variables').get('outcome').get('mean')
         self.outcome_std_multiplier = params.get('variables').get('outcome').get('std').get('multiplier')
         self.variable_groups = list(params.get('variables').keys())
-        self.numeric_variable_groups = [
-            x
-            for x in self.variable_groups
-            if params.get('variables').get(x).get('type') == 'numeric'
-            ]
         self.distributions = {}
 
     def _create_dataframe_with_outcome(self):
@@ -48,8 +43,8 @@ class Simlator:
         data = pd.DataFrame(outcome, columns=['outcome'])
         self.data = data
 
-    def _simulate_numeric_group_variables(self, group, additive_column=None):
-        group_params = self._get_numeric_group_parameters(group)
+    def _simulate_group_variables(self, group, additive_column=None):
+        group_params = self._get_group_parameters(group)
         for i in range(group_params['n']):
             name = f'{group}_{i}'
             mean = np.random.uniform(
@@ -67,22 +62,34 @@ class Simlator:
                 sample = np.power(sample, order)
             if group_params['additive_column']:
                 sample = sample + self.data[group_params['additive_column']]
-            self.data[name] = sample
+            if i >= group_params['n_numeric']:
+                sample = self._categorize_variable(sample, group_params['max_categories'], group)
+                self.data = pd.concat([self.data, sample], axis=1)
+            else:
+                self.data[name] = sample
             self.distributions[name] = {'mean': mean, 'stdev': std}
 
-    def _get_numeric_group_parameters(self, group):
+    def _get_group_parameters(self, group):
         group_params = {
             'n': self.params.get('variables').get(group).get('n'),
             'std_multiplier': self.params.get('variables').get(group).get('std').get('multiplier', 1),
             'mean_multiplier': self.params.get('variables').get(group).get('mean').get('multiplier', 0),
             'additive_column': self.params.get('variables').get(group).get('additive_column', None),
-            'max_order': self.params.get('variables').get(group).get('max_order', None)
+            'max_order': self.params.get('variables').get(group).get('max_order', None),
+            'n_numeric': self.params.get('variables').get(group).get('n_numeric', np.Inf),
+            'max_categories': self.params.get('variables').get(group).get('max_categories', 2)
             }
         group_params['std_multiplier_min'] = 0
         group_params['std_multiplier_max'] = group_params['std_multiplier']
         group_params['mean_min'] = 0
         group_params['mean_max'] = self.outcome_mean*group_params['mean_multiplier']
         return group_params
+
+    def _categorize_variable(self, sample, n_categories, group):
+        n_categories = random.randint(1, n_categories)
+        sample = pd.qcut(sample, q=n_categories, precision=1).astype(str)
+        dummies = pd.get_dummies(sample, prefix=group)
+        return dummies
 
     def save_data(self, data_subfolder=''):
         dir = os.path.join('articles/feature-selection/data', data_subfolder)
