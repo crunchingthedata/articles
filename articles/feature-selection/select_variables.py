@@ -18,10 +18,13 @@ def load_data(data_subdir):
     data = [pd.read_csv(x) for x in files]
     return data
 
+def count_related_features(d)':
+    return len([x for x in d.columns if re.match('related', x)])
+
 def calculate_proportion_by_type(selections):
     all_selections = list(itertools.chain.from_iterable(selections))
     n_total = len(all_selections)
-    n_related = len([x for x in all_selections if re.match('related_', x)])
+    n_related = count_related_features(all_selections)
     n_random = len([x for x in all_selections if re.match('random_', x)])
     n_correlated = n_total - n_related - n_random
     return {
@@ -39,7 +42,7 @@ def get_model_artifact_selections(data):
     variable_importance_selections = []
     shap_selections = []
     for d in data:
-        n = len([x for x in d.columns if re.match('related', x)])
+        n = count_related_features(d)
 
         X = d.drop(['outcome'], axis=1)
         clf = RandomForestRegressor(random_state=0, max_depth=2)
@@ -61,7 +64,7 @@ def get_model_artifact_selections(data):
 def get_feature_correlation_selections(data):
     selections = []
     for d in data:
-        n = len([x for x in d.columns if re.match('related', x)])
+        n = count_related_features(d)
         cor = d.corr(method='spearman') \
             .reset_index() \
             .sort_values(['outcome'], ascending=False) \
