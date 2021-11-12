@@ -1,0 +1,11 @@
+
+name: feature-selection
+dependencies:
+  - python>=3.9
+  - pandas
+  - numpy
+  - pyyaml
+  - pip
+  - pip:
+      - sklearn
+      - shap

@@ -1,0 +1,4 @@
+scenario,method,score
+test,correlation,0.4
+test,feature_importance,0.44
+test,shap,0.42
