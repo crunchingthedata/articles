@@ -27,6 +27,7 @@ class Simlator:
             )
         with open(parameter_path, 'r') as file:
             params = yaml.safe_load(file)
+        print(f'Parameters loaded from: {parameter_path}')
         return params
 
     def _create_dataframe_with_outcome(self):
@@ -91,7 +92,7 @@ class Simlator:
 
 
 n_simuations = 5
-param_files = ['simple', 'correlated', 'noise', 'scales']
+param_files = ['simple', 'correlated', 'noise', 'scales', 'cardinality']
 
 np.random.seed(1)
 random.seed(1)

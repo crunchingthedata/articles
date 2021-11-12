@@ -18,13 +18,13 @@ def load_data(data_subdir):
     data = [pd.read_csv(x) for x in files]
     return data
 
-def count_related_features(d)':
+def count_related_features(d):
     return len([x for x in d.columns if re.match('related', x)])
 
 def calculate_proportion_by_type(selections):
     all_selections = list(itertools.chain.from_iterable(selections))
     n_total = len(all_selections)
-    n_related = count_related_features(all_selections)
+    n_related = len([x for x in all_selections if re.match('related_', x)])
     n_random = len([x for x in all_selections if re.match('random_', x)])
     n_correlated = n_total - n_related - n_random
     return {
@@ -75,10 +75,11 @@ def get_feature_correlation_selections(data):
 
 
 
-datasets = ['simple', 'correlated', 'noise']
+datasets = ['simple', 'correlated', 'noise', 'scales', 'cardinality']
 
 metrics = []
 for dataset_name in datasets:
+    print(f'Calculating features for {dataset_name}')
     data = load_data(dataset_name)
 
     correlation = get_feature_correlation_selections(data)

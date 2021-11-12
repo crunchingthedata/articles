@@ -6,17 +6,17 @@ variables:
     std:
       multiplier: 0.05
   random:
-    n: 20
-    n_numeric: 20
-    max_categories: 0
+    n: 5
+    n_numeric: 2
+    max_categories: 25
     std:
       multiplier: 0.05
     mean:
       multiplier: 2
   related:
     n: 5
-    n_numeric: 5
-    max_categories: 0
+    n_numeric: 2
+    max_categories: 25
     std:
       multiplier: 0.05
     mean:
@@ -26,7 +26,7 @@ variables:
   correlated:
     n: 0
     n_numeric: 0
-    max_categories: 0
+    max_categories: 25
     std:
       multiplier: 0.05
     mean:
