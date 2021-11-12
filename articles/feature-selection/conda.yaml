@@ -9,3 +9,4 @@ dependencies:
   - pip:
       - sklearn
       - shap
+      - jupyter

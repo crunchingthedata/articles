@@ -1,22 +1,21 @@
 global:
-  n_observations: 500
+  n_observations: 100
 variables:
   outcome:
     mean: 100
     std: 5
   random:
     type: 'numeric'
-    n: 20
+    n: 5
     std:
       multiplier: 5
     mean:
       multiplier: 5
-    max_order: 3
   related:
     type: 'numeric'
     n: 5
     std:
-      multiplier: 5
+      multiplier: 1
     mean:
       multiplier: 5
     additive_column: 'outcome'
@@ -25,7 +24,7 @@ variables:
     type: 'numeric'
     n: 0
     std:
-      multiplier: 1
+      multiplier: 3
     mean:
-      multiplier: 0
+      multiplier: 2
     additive_column: 'related_0'

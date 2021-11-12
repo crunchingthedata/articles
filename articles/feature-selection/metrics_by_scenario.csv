@@ -1,4 +1,10 @@
 scenario,method,score
-test,correlation,0.4
-test,feature_importance,0.44
-test,shap,0.42
+simple,correlation,0.6
+simple,feature_importance,0.84
+simple,shap,0.84
+correlated,correlation,0.64
+correlated,feature_importance,0.56
+correlated,shap,0.56
+noise,correlation,0.4
+noise,feature_importance,0.4
+noise,shap,0.4

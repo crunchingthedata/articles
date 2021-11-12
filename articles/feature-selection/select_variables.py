@@ -11,7 +11,7 @@ from sklearn.linear_model import Lasso
 
 
 def load_data(data_subdir):
-    dir = os.path.join('data', data_subdir)
+    dir = os.path.join('articles/feature-selection/data', data_subdir)
     files = [
         os.path.join(dir, x, 'data.csv')
         for x in os.listdir(dir)
@@ -71,19 +71,19 @@ def get_feature_correlation_selections(data, n):
 
 
 
-datasets = ['test']
-n = 5
+datasets = ['simple', 'correlated', 'noise']
+n_variables = 5
 
 metrics = []
 for dataset_name in datasets:
-    data = load_data('test')
+    data = load_data(dataset_name)
 
-    correlation = get_feature_correlation_selections(data, n)
+    correlation = get_feature_correlation_selections(data, n_variables)
     correlation_p_correct = calculate_proportion_by_type(correlation).get('related')
 
-    feature_importance, shap = get_model_artifact_selections(data, n)
+    feature_importance, shap_ = get_model_artifact_selections(data, n_variables)
     feature_importance_p_correct = calculate_proportion_by_type(feature_importance).get('related')
-    shap_p_correct = calculate_proportion_by_type(shap).get('related')
+    shap_p_correct = calculate_proportion_by_type(shap_).get('related')
 
     dataset_metrics = [
         [dataset_name, 'correlation', correlation_p_correct],
@@ -96,5 +96,5 @@ all_metrics = pd.DataFrame(
     metrics,
     columns = ['scenario', 'method', 'score']
     )
-all_metrics.to_csv('metrics_by_scenario.csv', index=False)
+all_metrics.to_csv('articles/feature-selection/metrics_by_scenario.csv', index=False)
 print(all_metrics)

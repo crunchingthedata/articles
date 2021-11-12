@@ -1,9 +1,11 @@
 import os
+import pathlib
 import random
 
 import numpy as np
 import pandas as pd
 import yaml
+
 
 class Simlator:
     """
@@ -13,7 +15,8 @@ class Simlator:
     def __init__(self):
         pass
 
-    def simulate_data(self, parameter_path='parameters.yaml'):
+    def simulate_data(self, parameter_file='parameters'):
+        parameter_path = os.path.join('articles/feature-selection/parameters', parameter_file + '.yaml')
         self._load_parameters(parameter_path)
         self._create_dataframe_with_outcome()
         numeric_groups = [x for x in self.variable_groups if x != 'outcome']
@@ -49,13 +52,13 @@ class Simlator:
         group_params = self._get_numeric_group_parameters(group)
         for i in range(group_params['n']):
             name = f'{group}_{i}'
-            std = np.random.uniform(
-                low=group_params['std_min'],
-                high=group_params['std_max']
-                )
             mean = np.random.uniform(
                 low=group_params['mean_min'],
                 high=group_params['mean_max']
+                )
+            std = np.random.uniform(
+                low=group_params['std_min'],
+                high=group_params['std_max']
                 )
             sample = np.random.normal(mean, std, self.n)
             if group_params['max_order']:
@@ -81,7 +84,7 @@ class Simlator:
         return group_params
 
     def save_data(self, data_subfolder=''):
-        dir = os.path.join('data', data_subfolder)
+        dir = os.path.join('articles/feature-selection/data', data_subfolder)
         data_path = os.path.join(dir, 'data.csv')
         distibution_path = os.path.join(dir, 'params.yaml')
         if not os.path.exists(dir):
@@ -92,11 +95,14 @@ class Simlator:
 
 
 
+n_simuations = 5
+param_files = ['simple', 'correlated', 'noise', 'scales']
+
 np.random.seed(1)
+random.seed(1)
 s = Simlator()
-n_simuations = 10
-for i in range(n_simuations):
-    prefix = 'test'
-    subfolder = os.path.join(prefix, str(i))
-    data, distributions = s.simulate_data()
-    s.save_data(subfolder)
+for param_file in param_files:
+    for i in range(n_simuations):
+        data, distributions = s.simulate_data(param_file)
+        subfolder = os.path.join(param_file, str(i))
+        s.save_data(subfolder)
