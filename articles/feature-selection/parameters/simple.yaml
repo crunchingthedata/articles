@@ -3,19 +3,20 @@ global:
 variables:
   outcome:
     mean: 100
-    std: 5
+    std:
+      multiplier: 0.1
   random:
     type: 'numeric'
     n: 5
     std:
-      multiplier: 5
+      multiplier: 0.1
     mean:
       multiplier: 2
   related:
     type: 'numeric'
     n: 5
     std:
-      multiplier: 1
+      multiplier: 0.1
     mean:
       multiplier: 2
     additive_column: 'outcome'
@@ -24,7 +25,7 @@ variables:
     type: 'numeric'
     n: 0
     std:
-      multiplier: 3
+      multiplier: 0.1
     mean:
       multiplier: 2
     additive_column: 'related_0'
