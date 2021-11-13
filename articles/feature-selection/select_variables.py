@@ -3,21 +3,25 @@ import itertools
 import os
 import re
 
+from lime.lime_tabular import LimeTabularExplainer
 import numpy as np
 import pandas as pd
 import shap
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso
-
+from sklearn.inspection import permutation_importance
 
 def load_data(data_subdir):
-    dir = os.path.join('data', data_subdir)
+    dir = os.path.join('articles/feature-selection/data', data_subdir)
     files = [
         os.path.join(dir, x, 'data.csv')
         for x in os.listdir(dir)
         ]
     data = [pd.read_csv(x) for x in files]
     return data
+
+def count_related_features(d):
+    return len([x for x in d.columns if re.match('related', x)])
 
 def calculate_proportion_by_type(selections):
     all_selections = list(itertools.chain.from_iterable(selections))
@@ -36,19 +40,21 @@ def get_top_n_features(values, names, n):
     top_features = list(names[indices])
     return top_features
 
-def get_model_artifact_selections(data, n):
-    variable_importance_selections = []
+def get_model_artifact_selections(data):
+    impurity_selections = []
     shap_selections = []
+    permutation_selections = []
     for d in data:
-
+        n = count_related_features(d)
         X = d.drop(['outcome'], axis=1)
+        y = d['outcome']
         clf = RandomForestRegressor(random_state=0, max_depth=2)
-        clf.fit(X, d['outcome'])
+        clf.fit(X, y)
 
         feature_names = X.columns
         importance_values = clf.feature_importances_
         top_features = get_top_n_features(importance_values, feature_names, n)
-        variable_importance_selections.append(top_features)
+        impurity_selections.append(top_features)
 
         explainer = shap.Explainer(clf)
         shap_values = explainer(X)
@@ -56,39 +62,54 @@ def get_model_artifact_selections(data, n):
         top_features = get_top_n_features(shap_values_, feature_names, n)
         shap_selections.append(top_features)
 
-    return variable_importance_selections, shap_selections
+        permutation_values = permutation_importance(clf, X, y, n_repeats=20, random_state=0).get('importances_mean')
+        top_features = get_top_n_features(importance_values, feature_names, n)
+        permutation_selections.append(top_features)
 
-def get_feature_correlation_selections(data, n):
-    selections = []
-    for d in data:
-        cor = d.corr(method='spearman') \
-            .reset_index() \
-            .sort_values(['outcome'], ascending=False) \
+    return {
+        #'impurity': impurity_selections,
+        'permutation': permutation_selections,
+        'shap': shap_selections
+        }
+
+def get_feature_correlation_selections(data):
+    def calculate_top_correlations(d, n, method):
+        cor = d.corr(method=method) \
+            .reset_index()
+        cor['outcome'] = cor['outcome'].abs()
+        cor = cor.sort_values(['outcome'], ascending=False) \
             .head(n+1)
-        high_cors = [x for x in cor['index'] if x != 'outcome']
-        selections.append(high_cors)
-    return selections
+        features = [x for x in cor['index'] if x != 'outcome']
+        return features
+
+    spearman = []
+    pearson = []
+    for d in data:
+        n = count_related_features(d)
+        pearson_ = calculate_top_correlations(d, n, 'pearson')
+        spearman_ = calculate_top_correlations(d, n, 'spearman')
+        pearson.append(pearson_)
+        spearman.append(spearman_)
+    return {
+        #'pearson': pearson,
+        'spearman': spearman
+        }
 
 
 
-datasets = ['test']
-n = 5
+datasets = ['simple', 'correlated', 'noise', 'scales', 'cardinality']
 
 metrics = []
 for dataset_name in datasets:
-    data = load_data('test')
+    print(f'Calculating features for {dataset_name}')
+    data = load_data(dataset_name)
 
-    correlation = get_feature_correlation_selections(data, n)
-    correlation_p_correct = calculate_proportion_by_type(correlation).get('related')
-
-    feature_importance, shap = get_model_artifact_selections(data, n)
-    feature_importance_p_correct = calculate_proportion_by_type(feature_importance).get('related')
-    shap_p_correct = calculate_proportion_by_type(shap).get('related')
-
+    corr_selections = get_feature_correlation_selections(data)
+    model_selections = get_model_artifact_selections(data)
+    selections = {**corr_selections, **model_selections}
     dataset_metrics = [
-        [dataset_name, 'correlation', correlation_p_correct],
-        [dataset_name, 'feature_importance', feature_importance_p_correct],
-        [dataset_name, 'shap', shap_p_correct]
+        [dataset_name, k, calculate_proportion_by_type(v).get('related')]
+        for k, v in selections.items()
         ]
     metrics.extend(dataset_metrics)
 
@@ -96,5 +117,5 @@ all_metrics = pd.DataFrame(
     metrics,
     columns = ['scenario', 'method', 'score']
     )
-all_metrics.to_csv('metrics_by_scenario.csv', index=False)
+all_metrics.to_csv('articles/feature-selection/metrics_by_scenario.csv', index=False)
 print(all_metrics)
