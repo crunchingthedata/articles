@@ -3,11 +3,13 @@ import itertools
 import os
 import re
 
+from lime.lime_tabular import LimeTabularExplainer
 import numpy as np
 import pandas as pd
 import shap
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso
+from sklearn.inspection import permutation_importance
 
 def load_data(data_subdir):
     dir = os.path.join('articles/feature-selection/data', data_subdir)
@@ -39,19 +41,20 @@ def get_top_n_features(values, names, n):
     return top_features
 
 def get_model_artifact_selections(data):
-    variable_importance_selections = []
+    impurity_selections = []
     shap_selections = []
+    permutation_selections = []
     for d in data:
         n = count_related_features(d)
-
         X = d.drop(['outcome'], axis=1)
+        y = d['outcome']
         clf = RandomForestRegressor(random_state=0, max_depth=2)
-        clf.fit(X, d['outcome'])
+        clf.fit(X, y)
 
         feature_names = X.columns
         importance_values = clf.feature_importances_
         top_features = get_top_n_features(importance_values, feature_names, n)
-        variable_importance_selections.append(top_features)
+        impurity_selections.append(top_features)
 
         explainer = shap.Explainer(clf)
         shap_values = explainer(X)
@@ -59,19 +62,38 @@ def get_model_artifact_selections(data):
         top_features = get_top_n_features(shap_values_, feature_names, n)
         shap_selections.append(top_features)
 
-    return variable_importance_selections, shap_selections
+        permutation_values = permutation_importance(clf, X, y, n_repeats=20, random_state=0).get('importances_mean')
+        top_features = get_top_n_features(importance_values, feature_names, n)
+        permutation_selections.append(top_features)
+
+    return {
+        #'impurity': impurity_selections,
+        'permutation': permutation_selections,
+        'shap': shap_selections
+        }
 
 def get_feature_correlation_selections(data):
-    selections = []
+    def calculate_top_correlations(d, n, method):
+        cor = d.corr(method=method) \
+            .reset_index()
+        cor['outcome'] = cor['outcome'].abs()
+        cor = cor.sort_values(['outcome'], ascending=False) \
+            .head(n+1)
+        features = [x for x in cor['index'] if x != 'outcome']
+        return features
+
+    spearman = []
+    pearson = []
     for d in data:
         n = count_related_features(d)
-        cor = d.corr(method='spearman') \
-            .reset_index() \
-            .sort_values(['outcome'], ascending=False) \
-            .head(n+1)
-        high_cors = [x for x in cor['index'] if x != 'outcome']
-        selections.append(high_cors)
-    return selections
+        pearson_ = calculate_top_correlations(d, n, 'pearson')
+        spearman_ = calculate_top_correlations(d, n, 'spearman')
+        pearson.append(pearson_)
+        spearman.append(spearman_)
+    return {
+        #'pearson': pearson,
+        'spearman': spearman
+        }
 
 
 
@@ -82,17 +104,12 @@ for dataset_name in datasets:
     print(f'Calculating features for {dataset_name}')
     data = load_data(dataset_name)
 
-    correlation = get_feature_correlation_selections(data)
-    correlation_p_correct = calculate_proportion_by_type(correlation).get('related')
-
-    feature_importance, shap_ = get_model_artifact_selections(data)
-    feature_importance_p_correct = calculate_proportion_by_type(feature_importance).get('related')
-    shap_p_correct = calculate_proportion_by_type(shap_).get('related')
-
+    corr_selections = get_feature_correlation_selections(data)
+    model_selections = get_model_artifact_selections(data)
+    selections = {**corr_selections, **model_selections}
     dataset_metrics = [
-        [dataset_name, 'correlation', correlation_p_correct],
-        [dataset_name, 'feature_importance', feature_importance_p_correct],
-        [dataset_name, 'shap', shap_p_correct]
+        [dataset_name, k, calculate_proportion_by_type(v).get('related')]
+        for k, v in selections.items()
         ]
     metrics.extend(dataset_metrics)
 

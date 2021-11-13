@@ -1,24 +1,24 @@
 global:
-  n_observations: 1000
+  n_observations: 500
 variables:
   outcome:
-    mean: 100
+    mean: 10
     std:
-      multiplier: 0.05
+      multiplier: 0.1
   random:
     n: 5
     n_numeric: 2
     max_categories: 25
     std:
-      multiplier: 0.05
+      multiplier: 0.1
     mean:
       multiplier: 2
   related:
-    n: 5
-    n_numeric: 2
+    n: 15
+    n_numeric: 10
     max_categories: 25
     std:
-      multiplier: 0.05
+      multiplier: 0.1
     mean:
       multiplier: 2
     additive_column: 'outcome'
@@ -26,9 +26,9 @@ variables:
   correlated:
     n: 0
     n_numeric: 0
-    max_categories: 25
+    max_categories: 0
     std:
-      multiplier: 0.05
+      multiplier: 0.1
     mean:
-      multiplier: 2
+      multiplier: 1
     additive_column: 'related_0'

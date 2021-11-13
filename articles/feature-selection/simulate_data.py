@@ -58,8 +58,7 @@ class Simlator:
         for i in range(n):
             name = f'{group}_{i}'
             mean = np.random.uniform(low = 0, high = self.outcome_mean*mean_multiplier)
-            std_multiplier = np.random.uniform(low = 0, high = mean*std_multiplier)
-            std = mean*std_multiplier
+            std = np.random.uniform(low = 0, high = mean*std_multiplier)
             sample = np.random.normal(mean, std, self.n)
             if max_order:
                 order = random.randint(1, max_order)
@@ -75,7 +74,7 @@ class Simlator:
 
     def _categorize_variable(self, sample, n_categories, name):
         n_categories = random.randint(1, n_categories)
-        sample = pd.qcut(sample, q=n_categories, precision=1).astype(str)
+        sample = pd.cut(sample, bins=n_categories, precision=1).astype(str)
         dummies = pd.get_dummies(sample, prefix=name)
         return dummies
 
@@ -102,3 +101,6 @@ for param_file in param_files:
         data, distributions = s.simulate_data()
         subfolder = os.path.join(param_file, str(i))
         s.save_data(subfolder)
+
+        pd.set_option('display.max_columns', 100)
+        print('    ', distributions)
